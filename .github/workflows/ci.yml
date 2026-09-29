@@ -11,9 +11,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4 # This action clones the content of the current repo into the remote runner
       - name: Build Docker Image
-        run: docker build .
+        run: docker build -t app .
       - name: Run the container
-        run: docker run -d
+        run: docker run -d app
       - name: Test all endpoints
         run: |
           set -e
