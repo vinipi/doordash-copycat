@@ -13,14 +13,27 @@ jobs:
       - name: Build Docker Image
         run: docker build -t app .
       - name: Run the container
-        run: docker run -d app
-      - name: Test all endpoints
+        run:  |
+          docker run -d \
+          --name app \
+          -p 8080:8090 \
+          app
+      - name: Wait for the app
         run: |
-          set -e
-          curl -sS -o /dev/null -w "%{http_code}\n" \
-            "https://jedha.com/status" | tee http_code.txt
-          code=$(cat http_code.txt)
-          if [ "$code" != "200" ]; then
-            echo "call failed" >&2
-            exit 1
-          fi
+          timeout 60s bash -c '
+            until curl -fsS http://localhost:8080/status; do
+              echo "Waiting for app..."
+              sleep 2
+            done
+          '
+      - name: Test calculate fee
+        run: |
+          curl -fsS -X POST \
+            http://localhost:8080/calculate-fee/ \
+            -H "Content-Type: application/json" \
+            -d '{"distance_km":10,"weight_kg":5}'
+      - name: Test estimate time
+        run: |
+          curl -fsS -X GET \
+            http://localhost:8080/estimate-time/ \
+            -H "Content-Type: application/json"
