@@ -1,0 +1,26 @@
+name: CI for doordash
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4 # This action clones the content of the current repo into the remote runner
+      - name: Build Docker Image
+        run: docker build .
+      - name: Run the container
+        run: docker run -d
+      - name: Test all endpoints
+        run: |
+          set -e
+          curl -sS -o /dev/null -w "%{http_code}\n" \
+            "https://jedha.com/status" | tee http_code.txt
+          code=$(cat http_code.txt)
+          if [ "$code" != "200" ]; then
+            echo "call failed" >&2
+            exit 1
+          fi
